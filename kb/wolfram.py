@@ -1,7 +1,8 @@
 import wolframalpha
 import os
 
-wc = wolframalpha.Client(os.getenv("WOLFRAMALPHA_API_KEY"))
+api_key = os.getenv("WOLFRAMALPHA_API_KEY")
+wc = wolframalpha.Client(api_key)
 
 prefix = "!wolfram "
 
@@ -34,3 +35,13 @@ def query(query):
 def handle(cmd):
     if cmd.startswith(prefix):
         return query(cmd[len(prefix) :])
+
+
+def commands():
+    return [
+        (f"{prefix}<query>", "Perform arithmetic or solve equations on WolframAlpha.")
+    ]
+
+
+def enabled():
+    return api_key is not None and api_key != ""

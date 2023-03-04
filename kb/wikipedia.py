@@ -47,3 +47,11 @@ def handle(cmd):
         return search(cmd[len(prefix_search) :])
     elif cmd.startswith(prefix_get):
         return get_page(cmd[len(prefix_get) :])
+
+
+def commands():
+    return [(f"{prefix_search}<query>", "Search for an article in an encyclopedia.")]
+
+
+def enabled():
+    return True

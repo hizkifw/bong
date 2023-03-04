@@ -3,57 +3,82 @@ import time
 
 from colorama import Fore, Style
 import openai
-from kb import wikipedia, wolfram
-
-kb_handlers = [wikipedia.handle, wolfram.handle]
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+from kb import searx, wikipedia, wolfram
+
+kb_modules = [mod for mod in [searx, wolfram, wikipedia] if mod.enabled()]
+mod_descrs = "\n".join(
+    ["\n".join(["""- "%s"\t%s""" % c for c in mod.commands()]) for mod in kb_modules]
+)
 
 init_messages = [
     {
         "role": "system",
         "content": f"""
-You are Bong, a helpful assistant with access to external resources. To perform arithmetic or solve equations on WolframAlpha, respond with "{wolfram.prefix}<query>". To search an encyclopedia for factual information, respond with "{wikipedia.prefix_search}<query>".
-Whenever possible, you must use these external resources. Do not use your own knowledge as it may be out of date.
-Knowledge cutoff: September 2021. Current date and time: {time.strftime("%A, %d %B %Y, %H:%M")}. 
+You are Bong, an assistant with access to the Internet. You can invoke the following commands:
+{mod_descrs}
+Whenever possible, you must use these commands to derive your answer. Do not make any assumptions, or use your own knowledge as it may be out of date.
+Knowledge cutoff: September 2021. Current date and time: {time.strftime("%A, %d %B %Y, %H:%M")}.
+To acknowledge this notice, reply with !acknowledged.
 """.strip(),
     },
-    {"role": "user", "content": "Who won the world series in 2020?"},
+    {"role": "assistant", "content": "!acknowledged"},
+    {"role": "user", "content": "when was hoshimachi suisei's first album released?"},
     {
         "role": "assistant",
-        "content": f"{wikipedia.prefix_search}2020 world series",
+        "content": f"{searx.prefix}hoshimachi suisei first album release date",
     },
     {
         "role": "system",
         "content": f"""
-The following pages were found:
-- 2020_World_Series
-- 2020_World_Series_of_Poker
-- 2020_World_Series_of_Poker_Online
-- 2020_World_Series_of_Darts
-- 2020_World_Series_of_Darts_Finals
-- 2022_World_Series
-- 2021_World_Series
-- 2022_World_Series_of_Poker_results
-- 2021_World_Series_of_Poker_results
-- 2002_World_Series
-To get the page contents, respond with "{wikipedia.prefix_get}<page_name>". If there are no matches, you may retry with "{wikipedia.prefix_search}<query>".
-""".strip(),
-    },
-    {"role": "assistant", "content": f"{wikipedia.prefix_get}2020_World_Series"},
-    {
-        "role": "system",
-        "content": """
-The 2020 World Series was the championship series of Major League Baseball's 2020 season. The 116th World Series was a best-of-seven-playoff between the American League (AL) champion Tampa Bay Rays and the National League (NL) champion Los Angeles Dodgers. The Dodgers defeated the Rays to win the series in six games for their first championship since 1988.
-Due to the COVID-19 pandemic, the entire series was played at Globe Life Field in Arlington, Texas, from October 20 to October 27 with the ballpark's seating capacity limited to 25 percent (11,500 fans). The pandemic resulted in the regular season being reduced to 60 games, and the postseason being held at neutral sites instead of at teams' home stadiums. Thus, this was the first World Series to be played at a neutral site, as well as the first since 1944 to be held at only one ballpark and the first since 1993 to be played entirely on artificial turf. It was also the first World Series since 1984 to use the designated hitter for all games. With 2020 being the inaugural season for Globe Life Field, it became the first ballpark to host the World Series in its first year since Yankee Stadium in 2009.
-Despite not playing on their home field, the Dodgers were still designated as having home-field advantage in the series with the better regular season record. Los Angeles and Tampa Bay alternated victories during the first four games of the series before the Dodgers won both Game 5 and 6, becoming the first designated home team to win the World Series since the 2013 edition. Los Angeles shortstop Corey Seager was named the World Series Most Valuable Player (MVP) after batting 8-for-20 (.400) with two home runs, five runs batted in, and an on-base percentage of .556.
+Web search results:
+
+1. Hoshimachi Suisei - Wikipedia
+        URL: https://en.wikipedia.org/wiki/Hoshimachi_Suisei
+        Excerpt: Additionally, her first album, "Still Still Stellar", was released on 29 September 2021, and peaked at 5th on the Oricon daily album ranking, ...
+
+2. Hoshimachi Suisei/Discography - Virtual YouTuber Wiki
+        URL: https://virtualyoutuber.fandom.com/wiki/Hoshimachi_Suisei/Discography
+        Excerpt: "Michizure" (Live ver.) (みちづれ), 2023/02/17. Title, Date. " ...
+
+3. Suisei announces her 1st full album, "Still Still Stellar", with 12 ...
+        URL: https://www.reddit.com/r/Hololive/comments/og4x66/suisei_announces_her_1st_full_album_still_still/
+        Excerpt: Suisei announces her 1st full album, "Still Still Stellar", with 12 songs in total, to be released on September 29th! ☄️. r/Hololive - Suisei announces ...
+
+4. Still Still Stellar Hoshimachi Suisei CD Album - CDJapan
+        URL: https://www.cdjapan.co.jp/product/HOLO-2
+        Excerpt: Description. VTuber Hoshimachi Suisei to release the first full-length album with 12 tracks in total, including new one(s).
+
+5. Hoshimachi Suisei - Hololive Fan Wiki
+        URL: https://hololive.wiki/wiki/Hoshimachi_Suisei
+        Excerpt: Her first original, "comet" was first released on November 22, 2018 and her second, "天球、彗星は夜を跨いで" on March 22, 2019.
 """.strip(),
     },
     {
         "role": "assistant",
-        "content": "According to an encyclopedia, the 2020 World Series was won by Los Angeles Dodgers.",
+        "content": """Hoshimachi Suisei's first album, "Still Still Stellar" was released on September 29, 2021.""",
     },
 ]
+
+
+def print_messages(messages):
+    for msg in messages:
+        print(
+            Fore.GREEN
+            + msg["role"]
+            + Style.RESET_ALL
+            + "\n"
+            + (
+                Style.DIM
+                if msg["role"] == "system" or msg["content"].startswith("!")
+                else ""
+            )
+            + msg["content"]
+            + Style.RESET_ALL
+            + "\n"
+        )
 
 
 def chat(messages, newmsg):
@@ -69,15 +94,16 @@ def chat(messages, newmsg):
             model="gpt-3.5-turbo",
             messages=msgs,
         )
-        response = completion["choices"][0]["message"]["content"]
-        msgs.append({"role": "assistant", "content": response})
+        response_msg = completion["choices"][0]["message"]
+        msgs.append(response_msg)
+        print_messages([response_msg])
+        response = response_msg["content"]
 
         # If any of the lines start with a !, ignore all other lines
         cmd = ""
         for line in response.split("\n"):
             if line.startswith("!"):
                 cmd = line
-                print(Style.DIM + "Handling command:", cmd, Style.RESET_ALL)
                 break
 
         # No more commands from assistant, return all messages
@@ -86,8 +112,8 @@ def chat(messages, newmsg):
 
         # Find a suitable handler
         handled = False
-        for handler in kb_handlers:
-            kbres = handler(cmd)
+        for mod in kb_modules:
+            kbres = mod.handle(cmd)
 
             # Couldn't handle, find next
             if kbres is None:
@@ -95,6 +121,7 @@ def chat(messages, newmsg):
 
             # Handled, update next msg and exit loop
             next_msg = {"role": "system", "content": kbres}
+            print_messages([next_msg])
             handled = True
             break
 
@@ -105,22 +132,15 @@ def chat(messages, newmsg):
             }
 
 
+print_messages(init_messages[:2])
+
 messages = [*init_messages]
 while True:
     try:
+        print(Fore.GREEN + "user" + Style.RESET_ALL)
         q = input("> ")
-        messages = chat(messages, q)
+        print("")
 
-        for msg in messages[len(init_messages) :]:
-            print(
-                Fore.GREEN
-                + msg["role"]
-                + Style.RESET_ALL
-                + "\n"
-                + (Style.DIM if msg["role"] == "system" else "")
-                + msg["content"]
-                + Style.RESET_ALL
-                + "\n"
-            )
+        messages = chat(messages, q)
     except (EOFError, KeyboardInterrupt):
         break
