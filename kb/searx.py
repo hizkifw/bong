@@ -61,7 +61,7 @@ def handle(cmd):
 
 
 def commands():
-    return [(f"{prefix}<query>", "Perform a web search.")]
+    return [(f"{prefix}<query>", "Perform a web search for up-to-date information.")]
 
 
 def enabled():

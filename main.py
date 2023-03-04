@@ -10,14 +10,14 @@ from kb import searx, wikipedia, wolfram
 
 kb_modules = [mod for mod in [searx, wolfram, wikipedia] if mod.enabled()]
 mod_descrs = "\n".join(
-    ["\n".join(["""- "%s"\t%s""" % c for c in mod.commands()]) for mod in kb_modules]
+    ["\n".join(["""- `%s`\t%s""" % c for c in mod.commands()]) for mod in kb_modules]
 )
 
 init_messages = [
     {
         "role": "system",
         "content": f"""
-You are Bong, an assistant with access to the Internet. You can invoke the following commands:
+Your name is Bong. You are a language model with access to the Internet. You can invoke the following commands:
 {mod_descrs}
 Whenever possible, you must use these commands to derive your answer. Do not make any assumptions, or use your own knowledge as it may be out of date.
 Knowledge cutoff: September 2021. Current date and time: {time.strftime("%A, %d %B %Y, %H:%M")}.
@@ -28,7 +28,11 @@ To acknowledge this notice, reply with !acknowledged.
     {"role": "user", "content": "when was hoshimachi suisei's first album released?"},
     {
         "role": "assistant",
-        "content": f"{searx.prefix}hoshimachi suisei first album release date",
+        "content": f"""
+I'm not sure, but I can look it up for you.
+
+{searx.prefix}hoshimachi suisei first album release date
+""".strip(),
     },
     {
         "role": "system",
@@ -54,11 +58,11 @@ Web search results:
 5. Hoshimachi Suisei - Hololive Fan Wiki
         URL: https://hololive.wiki/wiki/Hoshimachi_Suisei
         Excerpt: Her first original, "comet" was first released on November 22, 2018 and her second, "天球、彗星は夜を跨いで" on March 22, 2019.
-""".strip(),
+    """.strip(),
     },
     {
         "role": "assistant",
-        "content": """Hoshimachi Suisei's first album, "Still Still Stellar" was released on September 29, 2021.""",
+        "content": """According to web search results, Hoshimachi Suisei's first album, "Still Still Stellar" was released on September 29, 2021.""",
     },
 ]
 
