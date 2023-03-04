@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+from . import webget
 
 prefix = "!search "
 endpoint = os.getenv("SEARX_ENDPOINT")
@@ -50,6 +51,11 @@ def query(query):
                     + "\n\n"
                 )
 
+        if webget.enabled():
+            outstr += f"""
+To get more information on a webpage, invoke the `{webget.prefix}<url>` command.
+For example, `{webget.prefix}{results['results'][0]['url']}`
+""".strip()
         return outstr.strip()
     except:
         return results

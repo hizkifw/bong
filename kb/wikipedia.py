@@ -2,8 +2,8 @@ import requests
 
 USER_AGENT = "BongBot/0.1 (+https://github.com/hizkifw/bong) requests/2.28.2"
 
-prefix_search = "!encyclopedia search "
-prefix_get = "!encyclopedia get "
+prefix_search = "!wikipedia search "
+prefix_get = "!wikipedia get "
 
 
 def search(query):
@@ -50,7 +50,7 @@ def handle(cmd):
 
 
 def commands():
-    return [(f"{prefix_search}<query>", "Search for an article in an encyclopedia.")]
+    return [(f"{prefix_search}<query>", "Search for an article in Wikipedia.")]
 
 
 def enabled():
