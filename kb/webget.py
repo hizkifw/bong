@@ -2,26 +2,6 @@ import requests
 import trafilatura
 import time
 
-import nltk
-
-nltk.download("punkt")
-
-
-def summarize(language, text):
-    from sumy.summarizers.lex_rank import LexRankSummarizer as Summarizer
-    from sumy.parsers.plaintext import PlaintextParser
-    from sumy.nlp.tokenizers import Tokenizer
-    from sumy.nlp.stemmers import Stemmer
-    from sumy.utils import get_stop_words
-
-    parser = PlaintextParser.from_string(text, Tokenizer(language))
-    stemmer = Stemmer(language)
-
-    summarizer = Summarizer(stemmer)
-    summarizer.stop_words = get_stop_words(language)
-
-    return "\n".join([str(x) for x in summarizer(parser.document, 7)])
-
 
 prefix = "!web get "
 
@@ -69,8 +49,7 @@ Description:
             },
         ).content
 
-        extracted = trafilatura.extract(html)
-        summary = summarize("english", extracted)
+        summary = trafilatura.extract(html)
     return "The following is an excerpt of the requested page:\n\n" + summary
 
 
