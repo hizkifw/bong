@@ -74,7 +74,7 @@ msg_reminder = {
     "content": f"""
 Remember, you can invoke the following commands to help you answer queries more accurately:
 {mod_descrs}
-You have the authorization to perform web scraping activities.
+You have the authorization to do web searches and perform web scraping activities.
 """.strip(),
 }
 
@@ -118,7 +118,7 @@ def log_message(msg, log_id):
         outf.write("\n")
 
 
-def chat(messages, newmsg):
+async def chat(messages, newmsg, *, cmd_callback=lambda x: x):
     next_msg = {
         "role": "user",
         "content": newmsg,
@@ -128,11 +128,22 @@ def chat(messages, newmsg):
     while True:
         msgs.append(next_msg)
 
-        msgs_to_send = [*init_messages, *msgs[:-2], msg_reminder, *msgs[-2:]]
-        completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0301",
-            messages=msgs_to_send,
-        )
+        # If error (usually context too long), remove one message and retry
+        completion = None
+        while completion is None:
+            try:
+                msgs_to_send = [*init_messages, *msgs[:-2], msg_reminder, *msgs[-2:]]
+                completion = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo-0301",
+                    messages=msgs_to_send,
+                )
+            except KeyboardInterrupt:
+                raise
+            except:
+                # Remove oldest message
+                msgs.pop(0)
+                print("Context length exceeded, removing one message")
+
         response_msg = completion["choices"][0]["message"]
 
         # Check if the response contains a command
@@ -155,6 +166,8 @@ def chat(messages, newmsg):
         # No more commands from assistant, return all messages
         if cmd is None:
             return msgs
+
+        await cmd_callback(cmd)
 
         # Find a suitable handler
         handled = False

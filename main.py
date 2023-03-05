@@ -1,7 +1,9 @@
+import asyncio
 from chat import print_messages, init_messages, chat
 from colorama import Fore, Style
 
-if __name__ == "__main__":
+
+async def main():
     print_messages(init_messages[:2])
 
     messages = []
@@ -11,6 +13,10 @@ if __name__ == "__main__":
             q = input("> ")
             print("")
 
-            messages = chat(messages, q)
+            messages = await chat(messages, q)
         except (EOFError, KeyboardInterrupt):
             break
+
+
+if __name__ == "__main__":
+    asyncio.get_event_loop().run_until_complete(main())

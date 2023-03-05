@@ -1,4 +1,5 @@
 import os
+import asyncio
 from chat import print_messages, init_messages, chat
 import discord
 
@@ -29,6 +30,9 @@ async def on_message(message):
     if len(message.content.strip()) == 0:
         return
 
+    async def cmd_callback(cmd):
+        await message.channel.send(f"Executing command: `{cmd}`")
+
     async with message.channel.typing():
         uid = message.author.id if not message.guild else message.channel.id
         if uid not in histories:
@@ -40,11 +44,12 @@ async def on_message(message):
             return
 
         print_messages([{"role": message.author.name, "content": message.content}])
-        histories[uid] = chat(
+        histories[uid] = await chat(
             histories[uid],
             # If message is in a channel, prefix with the sender's name
             ("[" + message.author.name + "] " if message.guild else "")
             + message.content,
+            cmd_callback=cmd_callback,
         )
 
     to_send = histories[uid][-1]["content"]
