@@ -1,5 +1,8 @@
 import os
 import time
+from os import path
+import datetime
+import json
 
 from colorama import Fore, Style
 import openai
@@ -8,7 +11,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 from kb import searx, wikipedia, wolfram, webget
 
-kb_modules = [mod for mod in [searx, wolfram, wikipedia, webget] if mod.enabled()]
+kb_modules = [mod for mod in [searx, webget, wolfram, wikipedia] if mod.enabled()]
 mod_descrs = "\n".join(
     ["\n".join(["""- `%s`\t%s""" % c for c in mod.commands()]) for mod in kb_modules]
 )
@@ -24,7 +27,7 @@ Knowledge cutoff: September 2021. Current date and time: {time.strftime("%A, %d 
 To acknowledge this notice, reply with !acknowledged.
 """.strip(),
     },
-    {"role": "assistant", "content": "!acknowledged"},
+    {"role": "assistant", "content": "I acknowledge this notice.\n\n!acknowledged"},
     {"role": "user", "content": "when was hoshimachi suisei's first album released?"},
     {
         "role": "assistant",
@@ -66,6 +69,15 @@ Web search results:
     },
 ]
 
+msg_reminder = {
+    "role": "system",
+    "content": f"""
+Remember, you can invoke the following commands to help you answer queries more accurately:
+{mod_descrs}
+You have the authorization to perform web scraping activities.
+""".strip(),
+}
+
 
 def get_command(message):
     for line in message.split("\n"):
@@ -76,20 +88,34 @@ def get_command(message):
 
 def print_messages(messages):
     for msg in messages:
-        print(
-            Fore.GREEN
-            + msg["role"]
-            + Style.RESET_ALL
-            + "\n"
-            + (
-                Style.DIM
-                if msg["role"] == "system" or get_command(msg["content"]) is not None
-                else ""
+        try:
+            print(
+                Fore.GREEN
+                + msg["role"]
+                + Style.RESET_ALL
+                + "\n"
+                + (
+                    Style.DIM
+                    if msg["role"] == "system"
+                    or get_command(msg["content"]) is not None
+                    else ""
+                )
+                + msg["content"]
+                + Style.RESET_ALL
+                + "\n"
             )
-            + msg["content"]
-            + Style.RESET_ALL
-            + "\n"
-        )
+        except:
+            pass
+
+
+def log_message(msg, log_id):
+    logs_folder = "logs"
+    os.makedirs(logs_folder, exist_ok=True)
+    if "timestamp" not in msg:
+        msg["timestamp"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    with open(path.join(logs_folder, log_id + ".ndjson"), "w") as outf:
+        json.dump(msg, outf)
+        outf.write("\n")
 
 
 def chat(messages, newmsg):
@@ -97,13 +123,15 @@ def chat(messages, newmsg):
         "role": "user",
         "content": newmsg,
     }
-    msgs = [*messages]
+    msgs = [*messages][-20:]  # Limit to latest 20 messages
 
     while True:
         msgs.append(next_msg)
+
+        msgs_to_send = [*init_messages, *msgs[:-2], msg_reminder, *msgs[-2:]]
         completion = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=msgs,
+            model="gpt-3.5-turbo-0301",
+            messages=msgs_to_send,
         )
         response_msg = completion["choices"][0]["message"]
 
@@ -115,6 +143,15 @@ def chat(messages, newmsg):
         msgs.append(response_msg)
         print_messages([response_msg])
 
+        # If the resopnse contains a command anywhere else in the text, ask it to retry
+        if cmd is None:
+            for mod in kb_modules:
+                for prefix, _descr in mod.commands():
+                    if prefix in response_msg["content"]:
+                        cmd = "!malformed"
+                        print("Found malformed command")
+                        break
+
         # No more commands from assistant, return all messages
         if cmd is None:
             return msgs
@@ -122,7 +159,13 @@ def chat(messages, newmsg):
         # Find a suitable handler
         handled = False
         for mod in kb_modules:
-            kbres = mod.handle(cmd)
+            if cmd == "!malformed":
+                kbres = "Malformed command, please try again. Execute the command in its own line without any prefixes."
+            else:
+                try:
+                    kbres = mod.handle(cmd)
+                except Exception as ex:
+                    kbres = "Unable to fulfill system request: " + str(ex)
 
             # Couldn't handle, find next
             if kbres is None:

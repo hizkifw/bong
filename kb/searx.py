@@ -3,7 +3,7 @@ import requests
 import json
 from . import webget
 
-prefix = "!search "
+prefix = "!web search "
 endpoint = os.getenv("SEARX_ENDPOINT")
 
 USER_AGENT = "BongBot/0.1 (+https://github.com/hizkifw/bong) requests/2.28.2"
@@ -58,7 +58,7 @@ For example, `{webget.prefix}{results['results'][0]['url']}`
 """.strip()
         return outstr.strip()
     except:
-        return results
+        return results if isinstance(results, str) else json.dumps(results)
 
 
 def handle(cmd):

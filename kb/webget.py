@@ -25,10 +25,43 @@ def query(url):
     ):
         from yt_dlp import YoutubeDL
 
-        with YoutubeDL(params={"quiet": True}) as dl:
+        with YoutubeDL(
+            params={
+                "quiet": False,
+                "extract_flat": True,
+                "playlist_items": "1:10",
+            }
+        ) as dl:
             info = dl.extract_info(url, download=False)
 
-        summary = f"""
+        if info["_type"] == "playlist":
+            playlist_entries = "\n".join(
+                [
+                    f"""
+- Title: {entry['title']}
+  URL: {entry['webpage_url'] if 'webpage_url' in entry else entry['url']}
+""".strip()
+                    for entry in info["entries"]
+                ]
+            )
+
+            quoted_descr = "> " + info["description"].strip().replace("\n", "\n> ")
+
+            summary = f"""
+YouTube Playlist
+Title: {info['title']}
+Channel: {info['channel']}
+Tags: {", ".join(info['tags'])}
+Description:
+{quoted_descr}
+
+Entries:
+{playlist_entries}
+
+For more information on an entry, invoke the `{prefix.strip()}` command on the entry's URL.
+""".strip()
+        else:
+            summary = f"""
 YouTube Video
 Title: {info['title']}
 Channel: {info['channel']}
@@ -39,6 +72,7 @@ Duration: {time.strftime('%H:%M:%S', time.gmtime(info['duration']))}
 Description:
 {info['description']}
 """.strip()
+
     else:
         html = requests.get(
             url,
@@ -59,7 +93,7 @@ def handle(cmd):
 
 
 def commands():
-    return [(f"{prefix}<url>", "Get the text contents of any web page.")]
+    return [(f"{prefix}<url>", "Safely get the text contents of any web page.")]
 
 
 def enabled():
