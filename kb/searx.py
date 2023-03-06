@@ -2,15 +2,15 @@ import os
 import requests
 import json
 import aiohttp
-from . import webget
+from . import webget, USER_AGENT
 
 prefix = "!web search "
 endpoint = os.getenv("SEARX_ENDPOINT")
 
-USER_AGENT = "BongBot/0.1 (+https://github.com/hizkifw/bong) requests/2.28.2"
-
 
 async def query(query):
+    query = query.replace('"', "")
+
     async with aiohttp.ClientSession() as session:
         async with session.get(
             f"{endpoint}/search",

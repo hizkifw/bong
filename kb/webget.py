@@ -2,11 +2,9 @@ import requests
 import aiohttp
 import trafilatura
 import time
-
+from . import USER_AGENT
 
 prefix = "!web get "
-
-USER_AGENT = "BongBot/0.1 (+https://github.com/hizkifw/bong) requests/2.28.2"
 
 # Substitute some websites for more scraper-friendly alternatives
 URL_SUBSTITUTIONS = [
@@ -15,6 +13,9 @@ URL_SUBSTITUTIONS = [
 
 
 async def query(url):
+    # Strip out anything after a space
+    url = url.split(" ")[0]
+
     for sub in URL_SUBSTITUTIONS:
         url = url.replace(*sub)
 

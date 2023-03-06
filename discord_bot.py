@@ -1,9 +1,9 @@
 import os
 import asyncio
-from chat import print_messages, init_messages, chat
+from chat import print_messages, get_init_messages, chat
 import discord
 
-print_messages(init_messages[:2])
+print_messages(get_init_messages()[:2])
 
 channel_id = os.getenv("DISCORD_BOT_CHANNEL_ID")
 channel_id = int(channel_id) if channel_id is not None and channel_id != "" else None

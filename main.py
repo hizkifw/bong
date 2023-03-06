@@ -1,10 +1,10 @@
 import asyncio
-from chat import print_messages, init_messages, chat
+from chat import print_messages, get_init_messages, chat
 from colorama import Fore, Style
 
 
 async def main():
-    print_messages(init_messages[:2])
+    print_messages(get_init_messages()[:2])
 
     messages = []
     while True:
