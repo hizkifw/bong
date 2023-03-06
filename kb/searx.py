@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import aiohttp
 from . import webget
 
 prefix = "!web search "
@@ -9,16 +10,18 @@ endpoint = os.getenv("SEARX_ENDPOINT")
 USER_AGENT = "BongBot/0.1 (+https://github.com/hizkifw/bong) requests/2.28.2"
 
 
-def query(query):
-    results = requests.get(
-        f"{endpoint}/search",
-        params={"q": query, "format": "json"},
-        headers={
-            "User-Agent": USER_AGENT,
-            "Accept-Language": "en-US,en;q=0.5",
-            "Accept": "text/html",
-        },
-    ).text
+async def query(query):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            f"{endpoint}/search",
+            params={"q": query, "format": "json"},
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept-Language": "en-US,en;q=0.5",
+                "Accept": "text/html",
+            },
+        ) as res:
+            results = await res.text()
 
     try:
         results = json.loads(results)
@@ -61,9 +64,9 @@ For example, `{webget.prefix}{results['results'][0]['url']}`
         return results if isinstance(results, str) else json.dumps(results)
 
 
-def handle(cmd):
+async def handle(cmd):
     if cmd.startswith(prefix):
-        return query(cmd[len(prefix) :])
+        return await query(cmd[len(prefix) :])
 
 
 def commands():

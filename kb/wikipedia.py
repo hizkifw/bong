@@ -1,4 +1,4 @@
-import requests
+import aiohttp
 
 USER_AGENT = "BongBot/0.1 (+https://github.com/hizkifw/bong) requests/2.28.2"
 
@@ -6,13 +6,15 @@ prefix_search = "!wikipedia search "
 prefix_get = "!wikipedia get "
 
 
-def search(query):
+async def search(query):
     # Search for the page
-    search = requests.get(
-        "https://en.wikipedia.org/w/api.php",
-        params={"action": "opensearch", "search": query, "format": "json"},
-        headers={"User-Agent": USER_AGENT},
-    ).json()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={"action": "opensearch", "search": query, "format": "json"},
+            headers={"User-Agent": USER_AGENT},
+        ) as res:
+            search = await res.json()
 
     if len(search[3]) == 0:
         return f"""Search returned no results. You may retry with "{prefix_search}<query>"."""
@@ -24,29 +26,31 @@ def search(query):
     )
 
 
-def get_page(query):
-    page = requests.get(
-        "https://en.wikipedia.org/w/api.php",
-        params={
-            "action": "query",
-            "prop": "extracts",
-            "titles": query,
-            "exintro": "true",
-            "explaintext": "true",
-            "format": "json",
-        },
-        headers={"User-Agent": USER_AGENT},
-    ).json()
+async def get_page(query):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                "action": "query",
+                "prop": "extracts",
+                "titles": query,
+                "exintro": "true",
+                "explaintext": "true",
+                "format": "json",
+            },
+            headers={"User-Agent": USER_AGENT},
+        ) as res:
+            page = await res.json()
 
     pages = page["query"]["pages"]
     return pages[next(iter(pages))]["extract"]
 
 
-def handle(cmd):
+async def handle(cmd):
     if cmd.startswith(prefix_search):
-        return search(cmd[len(prefix_search) :])
+        return await search(cmd[len(prefix_search) :])
     elif cmd.startswith(prefix_get):
-        return get_page(cmd[len(prefix_get) :])
+        return await get_page(cmd[len(prefix_get) :])
 
 
 def commands():

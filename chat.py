@@ -118,7 +118,7 @@ def log_message(msg, log_id):
         outf.write("\n")
 
 
-async def chat(messages, newmsg, *, cmd_callback=lambda x: x):
+async def chat(messages, newmsg, *, cmd_callback=None):
     next_msg = {
         "role": "user",
         "content": newmsg,
@@ -139,7 +139,7 @@ async def chat(messages, newmsg, *, cmd_callback=lambda x: x):
                 )
             except KeyboardInterrupt:
                 raise
-            except:
+            except openai.InvalidRequestError:
                 # Remove oldest message
                 msgs.pop(0)
                 print("Context length exceeded, removing one message")
@@ -167,7 +167,8 @@ async def chat(messages, newmsg, *, cmd_callback=lambda x: x):
         if cmd is None:
             return msgs
 
-        await cmd_callback(cmd)
+        if cmd_callback is not None:
+            await cmd_callback(cmd)
 
         # Find a suitable handler
         handled = False
@@ -176,7 +177,7 @@ async def chat(messages, newmsg, *, cmd_callback=lambda x: x):
                 kbres = "Malformed command, please try again. Execute the command in its own line without any prefixes."
             else:
                 try:
-                    kbres = mod.handle(cmd)
+                    kbres = await mod.handle(cmd)
                 except Exception as ex:
                     kbres = "Unable to fulfill system request: " + str(ex)
 

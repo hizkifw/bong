@@ -1,4 +1,5 @@
 import requests
+import aiohttp
 import trafilatura
 import time
 
@@ -13,7 +14,7 @@ URL_SUBSTITUTIONS = [
 ]
 
 
-def query(url):
+async def query(url):
     for sub in URL_SUBSTITUTIONS:
         url = url.replace(*sub)
 
@@ -74,22 +75,24 @@ Description:
 """.strip()
 
     else:
-        html = requests.get(
-            url,
-            headers={
-                "User-Agent": USER_AGENT,
-                "Accept-Language": "en-US,en;q=0.5",
-                "Accept": "text/html",
-            },
-        ).content
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url,
+                headers={
+                    "User-Agent": USER_AGENT,
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept": "text/html",
+                },
+            ) as res:
+                html = await res.text()
 
         summary = trafilatura.extract(html)
     return "The following is an excerpt of the requested page:\n\n" + summary
 
 
-def handle(cmd):
+async def handle(cmd):
     if cmd.startswith(prefix):
-        return query(cmd[len(prefix) :])
+        return await query(cmd[len(prefix) :])
 
 
 def commands():

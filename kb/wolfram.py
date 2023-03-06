@@ -20,7 +20,7 @@ def parse_wolfram(res):
     return plaintext.strip()
 
 
-def query(query):
+async def query(query):
     try:
         res = wc.query(query)
         if "didyoumeans" in res:
@@ -32,9 +32,9 @@ def query(query):
         return "Error querying information"
 
 
-def handle(cmd):
+async def handle(cmd):
     if cmd.startswith(prefix):
-        return query(cmd[len(prefix) :])
+        return await query(cmd[len(prefix) :])
 
 
 def commands():
