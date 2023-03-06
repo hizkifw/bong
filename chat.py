@@ -133,7 +133,7 @@ async def chat(messages, newmsg, *, cmd_callback=lambda x: x):
         while completion is None:
             try:
                 msgs_to_send = [*init_messages, *msgs[:-2], msg_reminder, *msgs[-2:]]
-                completion = openai.ChatCompletion.create(
+                completion = await openai.ChatCompletion.acreate(
                     model="gpt-3.5-turbo-0301",
                     messages=msgs_to_send,
                 )
