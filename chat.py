@@ -78,16 +78,22 @@ def print_messages(messages):
 
 
 def log_message(msg, log_id):
+    if log_id is None:
+        return
+
+    # Copy the message object
+    msg = json.loads(json.dumps(msg))
+
     logs_folder = "logs"
     os.makedirs(logs_folder, exist_ok=True)
     if "timestamp" not in msg:
         msg["timestamp"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    with open(path.join(logs_folder, log_id + ".ndjson"), "w") as outf:
+    with open(path.join(logs_folder, log_id + ".ndjson"), "a") as outf:
         json.dump(msg, outf)
         outf.write("\n")
 
 
-async def chat(messages, newmsg, *, cmd_callback=None):
+async def chat(messages, newmsg, *, cmd_callback=None, log_id=None):
     next_msg = {
         "role": "user",
         "content": newmsg,
@@ -96,6 +102,7 @@ async def chat(messages, newmsg, *, cmd_callback=None):
 
     while True:
         msgs.append(next_msg)
+        log_message(next_msg, log_id)
 
         # If error (usually context too long), remove one message and retry
         completion = None
@@ -125,6 +132,7 @@ async def chat(messages, newmsg, *, cmd_callback=None):
 
         msgs.append(response_msg)
         print_messages([response_msg])
+        log_message(response_msg, log_id)
 
         # If the resopnse contains a command anywhere else in the text, ask it to retry
         if cmd is None:

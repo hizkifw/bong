@@ -50,6 +50,7 @@ async def on_message(message):
             ("[" + message.author.name + "] " if message.guild else "")
             + message.content,
             cmd_callback=cmd_callback,
+            log_id=f"discord_{uid}",
         )
 
     to_send = histories[uid][-1]["content"]

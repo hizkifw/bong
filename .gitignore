@@ -4,3 +4,4 @@ venv/
 .venv/
 __pycache__
 .envrc
+logs/
