@@ -4,11 +4,11 @@ import json
 import aiohttp
 from . import webget, USER_AGENT
 
-prefix = "!web search "
 endpoint = os.getenv("SEARX_ENDPOINT")
 
 
-async def query(query):
+async def query(params):
+    query = params["query"]
     query = query.replace('"', "")
 
     async with aiohttp.ClientSession() as session:
@@ -64,13 +64,24 @@ For example, `{webget.prefix}{results['results'][0]['url']}`
         return results if isinstance(results, str) else json.dumps(results)
 
 
-async def handle(cmd):
-    if cmd.startswith(prefix):
-        return await query(cmd[len(prefix) :])
-
-
-def commands():
-    return [(f"{prefix}<query>", "Perform a web search for up-to-date information.")]
+def functions():
+    return [
+        {
+            "name": "web_search",
+            "description": "Search the web for up-to-date information.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The query to search for.",
+                    }
+                },
+                "required": ["query"],
+            },
+            "handler": query,
+        }
+    ]
 
 
 def enabled():

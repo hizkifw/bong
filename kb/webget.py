@@ -1,10 +1,7 @@
-import requests
 import aiohttp
 import trafilatura
 import time
 from . import USER_AGENT
-
-prefix = "!web get "
 
 # Substitute some websites for more scraper-friendly alternatives
 URL_SUBSTITUTIONS = [
@@ -12,7 +9,9 @@ URL_SUBSTITUTIONS = [
 ]
 
 
-async def query(url):
+async def query(params):
+    url = params["url"]
+
     # Strip out anything after a space
     url = url.split(" ")[0]
 
@@ -91,13 +90,24 @@ Description:
     return "The following is an excerpt of the requested page:\n\n" + summary
 
 
-async def handle(cmd):
-    if cmd.startswith(prefix):
-        return await query(cmd[len(prefix) :])
-
-
-def commands():
-    return [(f"{prefix}<url>", "Safely get the text contents of any web page.")]
+def functions():
+    return [
+        {
+            "name": "web_get",
+            "description": "Get a summary of the text contents of any web page",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "The URL of the webpage to get.",
+                    }
+                },
+                "required": ["url"],
+            },
+            "handler": query,
+        }
+    ]
 
 
 def enabled():

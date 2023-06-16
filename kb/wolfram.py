@@ -4,8 +4,6 @@ import os
 api_key = os.getenv("WOLFRAMALPHA_API_KEY")
 wc = wolframalpha.Client(api_key)
 
-prefix = "!wolfram "
-
 
 def parse_wolfram(res):
     plaintext = ""
@@ -20,7 +18,8 @@ def parse_wolfram(res):
     return plaintext.strip()
 
 
-async def query(query):
+async def query(params):
+    query = params["query"]
     try:
         res = wc.query(query)
         if "didyoumeans" in res:
@@ -32,14 +31,23 @@ async def query(query):
         return "Error querying information"
 
 
-async def handle(cmd):
-    if cmd.startswith(prefix):
-        return await query(cmd[len(prefix) :])
-
-
-def commands():
+def functions():
     return [
-        (f"{prefix}<query>", "Perform arithmetic or solve equations on WolframAlpha.")
+        {
+            "name": "wolfram_alpha",
+            "description": "Query Wolfram Alpha for mathematical computation and factual information",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The mathematical problem to solve or the factual information to query.",
+                    }
+                },
+                "required": ["query"],
+            },
+            "handler": query,
+        }
     ]
 
 
